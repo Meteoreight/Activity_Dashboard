@@ -254,3 +254,223 @@ function updateDateHeaders(activities) {
         dateHeaderBottom.classList.remove('hidden');
     }
 }
+
+// Global variable to store current filtered activities for editing
+let currentFilteredActivities = [];
+
+// Add double-click listeners to Gantt chart bars
+function addDoubleClickListeners() {
+    const ganttBars = document.querySelectorAll('.gantt-bar');
+    ganttBars.forEach(bar => {
+        bar.addEventListener('dblclick', function() {
+            const uniqueId = parseInt(this.dataset.uniqueId);
+            const activity = allActivities.find(act => act._uniqueId === uniqueId);
+            if (activity) {
+                openEditModal(activity);
+            }
+        });
+    });
+}
+
+// Add double-click listeners to Kanban cards
+function addKanbanDoubleClickListeners() {
+    const kanbanCards = document.querySelectorAll('.kanban-card');
+    kanbanCards.forEach(card => {
+        card.addEventListener('dblclick', function() {
+            const uniqueId = parseInt(this.dataset.uniqueId);
+            const activity = allActivities.find(act => act._uniqueId === uniqueId);
+            if (activity) {
+                openEditModal(activity);
+            }
+        });
+    });
+}
+
+// Open edit modal with activity data
+function openEditModal(activity) {
+    const modal = document.getElementById('edit-modal');
+    
+    document.getElementById('edit-index').value = activity._uniqueId;
+    document.getElementById('edit-manufacturing-site').value = activity.Manufacturing_site || '';
+    document.getElementById('edit-product').value = activity.Product || '';
+    document.getElementById('edit-api').value = activity.API || '';
+    document.getElementById('edit-assignment').value = activity.Assignment || '';
+    document.getElementById('edit-process').value = activity.Process || '';
+    document.getElementById('edit-activity').value = activity.Activity || '';
+    document.getElementById('edit-start-date').value = activity.Start_with || '';
+    document.getElementById('edit-end-date').value = activity.End_with || '';
+    document.getElementById('edit-note').value = activity.Note || '';
+    
+    modal.classList.remove('hidden');
+}
+
+// Close edit modal
+function closeEditModal() {
+    const modal = document.getElementById('edit-modal');
+    modal.classList.add('hidden');
+}
+
+// Open add modal
+function openAddModal() {
+    const modal = document.getElementById('add-modal');
+    
+    // Clear form fields
+    document.getElementById('add-manufacturing-site').value = '';
+    document.getElementById('add-product').value = '';
+    document.getElementById('add-api').value = '';
+    document.getElementById('add-assignment').value = '';
+    document.getElementById('add-process').value = '';
+    document.getElementById('add-activity-input').value = '';
+    document.getElementById('add-start-date').value = '';
+    document.getElementById('add-end-date').value = '';
+    document.getElementById('add-note').value = '';
+    
+    modal.classList.remove('hidden');
+}
+
+// Close add modal
+function closeAddModal() {
+    const modal = document.getElementById('add-modal');
+    modal.classList.add('hidden');
+}
+
+// Delete activity
+function deleteActivity() {
+    const uniqueId = parseInt(document.getElementById('edit-index').value);
+    const activityIndex = allActivities.findIndex(act => act._uniqueId === uniqueId);
+    
+    if (activityIndex !== -1) {
+        if (confirm(translations[currentLanguage]['delete-confirm'] || 'Are you sure you want to delete this activity?')) {
+            allActivities.splice(activityIndex, 1);
+            closeEditModal();
+            
+            // Update selectors and redraw
+            populateSiteSelector();
+            populateAssigneeSelector();
+            populateProductSelector();
+            populateAllSuggestions();
+            handleDrawChart();
+            
+            // Save to file if in edit mode
+            if (currentFileHandle) {
+                handleSaveToFile();
+            }
+        }
+    }
+}
+
+// Save changes to activity
+async function saveChanges() {
+    const uniqueId = parseInt(document.getElementById('edit-index').value);
+    const activityIndex = allActivities.findIndex(act => act._uniqueId === uniqueId);
+    
+    if (activityIndex !== -1) {
+        // Update activity data
+        allActivities[activityIndex].Manufacturing_site = document.getElementById('edit-manufacturing-site').value;
+        allActivities[activityIndex].Product = document.getElementById('edit-product').value;
+        allActivities[activityIndex].API = document.getElementById('edit-api').value;
+        allActivities[activityIndex].Assignment = document.getElementById('edit-assignment').value;
+        allActivities[activityIndex].Process = document.getElementById('edit-process').value;
+        allActivities[activityIndex].Activity = document.getElementById('edit-activity').value;
+        allActivities[activityIndex].Start_with = document.getElementById('edit-start-date').value;
+        allActivities[activityIndex].End_with = document.getElementById('edit-end-date').value;
+        allActivities[activityIndex].Note = document.getElementById('edit-note').value;
+        
+        closeEditModal();
+        
+        // Update selectors and redraw
+        populateSiteSelector();
+        populateAssigneeSelector();
+        populateProductSelector();
+        populateAllSuggestions();
+        handleDrawChart();
+        
+        // Save to file if in edit mode
+        if (currentFileHandle) {
+            await handleSaveToFile();
+        }
+    }
+}
+
+// Add new activity
+async function addNewActivity() {
+    const newActivity = {
+        Manufacturing_site: document.getElementById('add-manufacturing-site').value,
+        Product: document.getElementById('add-product').value,
+        API: document.getElementById('add-api').value,
+        Assignment: document.getElementById('add-assignment').value,
+        Process: document.getElementById('add-process').value,
+        Activity: document.getElementById('add-activity-input').value,
+        Start_with: document.getElementById('add-start-date').value,
+        End_with: document.getElementById('add-end-date').value,
+        Note: document.getElementById('add-note').value,
+        _uniqueId: allActivities.length > 0 ? Math.max(...allActivities.map(a => a._uniqueId)) + 1 : 0
+    };
+    
+    allActivities.push(newActivity);
+    closeAddModal();
+    
+    // Update selectors and redraw
+    populateSiteSelector();
+    populateAssigneeSelector();
+    populateProductSelector();
+    populateAllSuggestions();
+    handleDrawChart();
+    
+    // Save to file if in edit mode
+    if (currentFileHandle) {
+        await handleSaveToFile();
+    }
+}
+
+// Export data to CSV
+function exportData() {
+    if (allActivities.length === 0) {
+        alert('No data to export');
+        return;
+    }
+    
+    const headers = ['Manufacturing_site', 'Product', 'API', 'Assignment', 'Note', 'Process', 'Activity', 'Start_with', 'End_with'];
+    const csvContent = [
+        headers.join(','),
+        ...allActivities.map(activity => 
+            headers.map(header => {
+                const value = activity[header] || '';
+                return value.includes(',') || value.includes('"') ? `"${value.replace(/"/g, '""')}"` : value;
+            }).join(',')
+        )
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${originalFileName}_export.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Format date range for display
+function formatDateRange(startDate, endDate) {
+    if (!startDate && !endDate) {
+        return translations[currentLanguage]['no-dates'] || 'No dates';
+    }
+    
+    if (startDate === endDate) {
+        return startDate;
+    }
+    
+    return `${startDate} - ${endDate}`;
+}
+
+// Directory handle functions for File System Access API
+async function getLastDirectoryHandle() {
+    // Placeholder for directory handle retrieval
+    return null;
+}
+
+async function saveDirectoryInfo(fileHandle) {
+    // Placeholder for directory handle saving
+}

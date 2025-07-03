@@ -113,6 +113,9 @@ function initializePage() {
         console.log('Event listeners added successfully');
         
         console.log('HTML Gantt chart ready');
+        
+        // Load default data file
+        loadDefaultData();
     } catch (error) {
         console.error('Error initializing page:', error);
     }

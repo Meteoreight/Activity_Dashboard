@@ -107,6 +107,42 @@ function handleUseMockData() {
     }
 }
 
+async function loadDefaultData() {
+    console.log('Loading default data file...');
+    try {
+        const response = await fetch('./data/data.csv');
+        if (!response.ok) {
+            console.warn('Default data file not found, using empty state');
+            return;
+        }
+        
+        const csvText = await response.text();
+        fileNameSpan.textContent = 'data.csv';
+        originalFileName = 'data';
+        
+        if (typeof Papa !== 'undefined') {
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: (results) => {
+                    processData(results.data);
+                    console.log('Default data loaded successfully');
+                },
+                error: (error) => {
+                    console.error('Error parsing default CSV:', error);
+                }
+            });
+        } else {
+            console.log('Papa not available, using fallback CSV parser');
+            const data = parseCSVFallback(csvText);
+            processData(data);
+            console.log('Default data loaded successfully');
+        }
+    } catch (error) {
+        console.error('Error loading default data:', error);
+    }
+}
+
 // Excel file parser function
 function parseExcelFile(file) {
     if (typeof XLSX === 'undefined') {

@@ -1,7 +1,7 @@
 const translations = {
     en: {
-        'header-title': 'Manufacturing Activity Dashboard',
-        'header-description': 'Open CSV or Excel files to visualize and edit manufacturing site activities in a Gantt chart format.',
+        'header-title': 'Activity Dashboard',
+        'header-description': 'Open CSV or Excel files to visualize and edit activities in a Gantt chart and Kanban board format.',
         'file-name': 'No file selected',
         'use-sample-data-btn': 'Use Sample Data',
         'select-site-label': 'Site:',
@@ -63,11 +63,12 @@ const translations = {
         'add-end-date-label': 'End Date',
         'add-note-label': 'Note',
         'cancel-add-btn': 'Cancel',
-        'save-add-btn': 'Add Activity'
+        'save-add-btn': 'Add Activity',
+        'delete-confirm': 'Are you sure you want to delete this activity?'
     },
     ja: {
-        'header-title': '製造所アクティビティダッシュボード',
-        'header-description': 'CSVまたはExcelファイルを開いて、製造所ごとのアクティビティをガントチャートで可視化・編集します。',
+        'header-title': 'アクティビティダッシュボード',
+        'header-description': 'CSVまたはExcelファイルを開いて、アクティビティをガントチャートとカンバンボードで可視化・編集します。',
         'file-name': 'ファイルが選択されていません',
         'use-sample-data-btn': 'サンプルデータを使用',
         'select-site-label': '製造所:',
@@ -81,7 +82,7 @@ const translations = {
         'placeholder-text': 'データを表示するには、CSV/Excelファイルを開くか、サンプルデータを使用してください。',
         'csv-format-title': 'ファイルフォーマットガイド',
         'csv-format-desc': '以下のヘッダーを持つCSVまたはExcelファイルを開いてください:',
-        'date-format-note': '日付のフォーマットは `YYYY-MM-DD` を推奨します。',
+        'date-format-note': '日付のフォーマットは `YYYY-MM-DD` です。',
         'activity-header': 'アクティビティ',
         'period-display': '期間表示（四半期）',
         'all-sites': '全ての製造所',
@@ -129,7 +130,8 @@ const translations = {
         'add-end-date-label': '終了日',
         'add-note-label': 'ノート',
         'cancel-add-btn': 'キャンセル',
-        'save-add-btn': 'アクティビティを追加'
+        'save-add-btn': 'アクティビティを追加',
+        'delete-confirm': 'このアクティビティを削除してもよろしいですか？'
     }
 };
 

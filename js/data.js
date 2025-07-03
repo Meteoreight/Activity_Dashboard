@@ -13,7 +13,7 @@ CMO3,ProductM,API-013,User1,Note 13,Process-A,APQR,2025-07-10,2025-07-10
 CMO3,ProductN,API-014,User2,Note 14,Process-B,BRM,2025-07-15,2025-07-17
 `;
 
-function processData(data) {
+async function processData(data) {
     console.log('Processing data:', data.length, 'rows');
     if (data.length > 0 && 'Manufacturing_site' in data[0]) {
         console.log('Data headers:', Object.keys(data[0]));
@@ -23,6 +23,10 @@ function processData(data) {
             ...activity,
             _uniqueId: index
         }));
+        
+        // Save to database
+        await saveActivitiesToDatabase(allActivities);
+        
         populateSiteSelector();
         populateAssigneeSelector();
         populateProductSelector();
@@ -86,62 +90,38 @@ function handleFileUpload(event) {
     }
 }
 
-function handleUseMockData() {
-    fileNameSpan.textContent = 'sample_data.csv';
-    originalFileName = 'sample_data';
+async function handleUseMockData() {
+    const fileNameSpan = document.getElementById('file-name');
+    if (fileNameSpan) {
+        fileNameSpan.textContent = 'sample_data.csv';
+    }
+    if (typeof originalFileName !== 'undefined') {
+        originalFileName = 'sample_data';
+    }
     console.log('Using mock data...');
     
     if (typeof Papa !== 'undefined') {
         Papa.parse(mockCSVData, {
             header: true,
             skipEmptyLines: true,
-            complete: (results) => {
-                processData(results.data);
+            complete: async (results) => {
+                await processData(results.data);
             }
         });
     } else {
         console.log('Papa not available, using fallback CSV parser');
         // Fallback CSV parser
         const data = parseCSVFallback(mockCSVData);
-        processData(data);
+        await processData(data);
     }
 }
 
-async function loadDefaultData() {
-    console.log('Loading default data file...');
-    try {
-        const response = await fetch('./data/data.csv');
-        if (!response.ok) {
-            console.warn('Default data file not found, using empty state');
-            return;
-        }
-        
-        const csvText = await response.text();
-        fileNameSpan.textContent = 'data.csv';
-        originalFileName = 'data';
-        
-        if (typeof Papa !== 'undefined') {
-            Papa.parse(csvText, {
-                header: true,
-                skipEmptyLines: true,
-                complete: (results) => {
-                    processData(results.data);
-                    console.log('Default data loaded successfully');
-                },
-                error: (error) => {
-                    console.error('Error parsing default CSV:', error);
-                }
-            });
-        } else {
-            console.log('Papa not available, using fallback CSV parser');
-            const data = parseCSVFallback(csvText);
-            processData(data);
-            console.log('Default data loaded successfully');
-        }
-    } catch (error) {
-        console.error('Error loading default data:', error);
-    }
-}
+// Make sure the function is available globally
+window.handleUseMockData = handleUseMockData;
+
+// Add debug logging
+console.log('data.js loaded, handleUseMockData defined:', typeof handleUseMockData);
+
 
 // Excel file parser function
 function parseExcelFile(file) {
@@ -233,4 +213,209 @@ function parseCSVFallback(csvText) {
     console.log('Fallback CSV parser result:', data.length, 'rows');
     console.log('First row sample:', data[0]);
     return data;
+}
+
+// Database Integration Functions
+
+async function saveActivitiesToDatabase(activities) {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            console.warn('Database not initialized, skipping save');
+            return;
+        }
+        
+        // Convert activities to database format (remove _uniqueId for database storage)
+        const dbActivities = activities.map(activity => {
+            const { _uniqueId, ...dbActivity } = activity;
+            return dbActivity;
+        });
+        
+        await database.saveAllActivities(dbActivities);
+        console.log('Activities saved to database successfully');
+    } catch (error) {
+        console.error('Failed to save activities to database:', error);
+    }
+}
+
+async function loadActivitiesFromDatabase() {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            console.warn('Database not initialized');
+            return null;
+        }
+        
+        const activities = await database.getAllActivities();
+        
+        if (activities && activities.length > 0) {
+            // Add _uniqueId for compatibility with existing code
+            const processedActivities = activities.map((activity, index) => ({
+                ...activity,
+                _uniqueId: activity.id || index
+            }));
+            
+            console.log('Loaded activities from database:', processedActivities.length);
+            return processedActivities;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Failed to load activities from database:', error);
+        return null;
+    }
+}
+
+async function saveActivityToDatabase(activity) {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            console.warn('Database not initialized, skipping save');
+            return;
+        }
+        
+        // Remove _uniqueId for database storage
+        const { _uniqueId, ...dbActivity } = activity;
+        
+        if (activity.id) {
+            // Update existing activity
+            await database.updateActivity(activity.id, dbActivity);
+            console.log('Activity updated in database:', activity.id);
+        } else {
+            // Create new activity
+            const newId = await database.saveActivity(dbActivity);
+            console.log('New activity saved to database:', newId);
+            return newId;
+        }
+    } catch (error) {
+        console.error('Failed to save activity to database:', error);
+    }
+}
+
+async function deleteActivityFromDatabase(activityId) {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            console.warn('Database not initialized, skipping delete');
+            return;
+        }
+        
+        await database.deleteActivity(activityId);
+        console.log('Activity deleted from database:', activityId);
+    } catch (error) {
+        console.error('Failed to delete activity from database:', error);
+    }
+}
+
+async function loadDefaultDataFromDatabase() {
+    console.log('Attempting to load data from database...');
+    
+    try {
+        // First try to load from database
+        const databaseActivities = await loadActivitiesFromDatabase();
+        
+        if (databaseActivities && databaseActivities.length > 0) {
+            console.log('Loading data from database...');
+            const fileNameSpan = document.getElementById('file-name');
+            if (fileNameSpan) {
+                fileNameSpan.textContent = 'database.csv (Local Database)';
+            }
+            if (typeof originalFileName !== 'undefined') {
+                originalFileName = 'database';
+            }
+            
+            allActivities = databaseActivities;
+            populateSiteSelector();
+            populateAssigneeSelector();
+            populateProductSelector();
+            populateAllSuggestions();
+            mainContent.classList.remove('hidden');
+            placeholderContent.classList.add('hidden');
+            document.getElementById('export-data').classList.remove('hidden');
+            document.getElementById('add-activity').classList.remove('hidden');
+            handleDrawChart();
+            
+            console.log('Data loaded from database successfully');
+            return true;
+        } else {
+            console.log('No data found in database, loading default CSV...');
+            // Fallback to default CSV loading
+            await loadDefaultDataFromCSV();
+            return false;
+        }
+    } catch (error) {
+        console.error('Error loading from database:', error);
+        // Fallback to default CSV loading
+        await loadDefaultDataFromCSV();
+        return false;
+    }
+}
+
+async function loadDefaultDataFromCSV() {
+    console.log('Loading default CSV data...');
+    const fileNameSpan = document.getElementById('file-name');
+    if (fileNameSpan) {
+        fileNameSpan.textContent = 'data.csv (Default)';
+    }
+    if (typeof originalFileName !== 'undefined') {
+        originalFileName = 'data';
+    }
+    
+    if (typeof Papa !== 'undefined') {
+        Papa.parse(mockCSVData, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                await processData(results.data);
+                console.log('Default CSV data loaded successfully');
+            },
+            error: (error) => {
+                console.error('Error parsing default CSV:', error);
+            }
+        });
+    } else {
+        console.log('Papa not available, using fallback CSV parser');
+        const data = parseCSVFallback(mockCSVData);
+        await processData(data);
+        console.log('Default CSV data loaded successfully');
+    }
+}
+
+async function exportActivitiesFromDatabase() {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            console.warn('Database not initialized');
+            return [];
+        }
+        
+        return await database.exportActivities();
+    } catch (error) {
+        console.error('Failed to export activities from database:', error);
+        return [];
+    }
+}
+
+async function getDatabaseStatus() {
+    try {
+        const database = getDatabase();
+        if (!database) {
+            return {
+                connected: false,
+                message: 'Database not initialized'
+            };
+        }
+        
+        const info = await database.getDatabaseInfo();
+        return {
+            connected: true,
+            ...info
+        };
+    } catch (error) {
+        console.error('Error getting database status:', error);
+        return {
+            connected: false,
+            message: 'Error: ' + error.message
+        };
+    }
 }

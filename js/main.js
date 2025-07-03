@@ -24,14 +24,14 @@ const ganttView = document.getElementById('gantt-view');
 const kanbanView = document.getElementById('kanban-view');
 
 // Initialize page when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, initializing page...');
-    initializePage();
+    await initializePage();
     
     updateLanguage('en');
 });
 
-function initializePage() {
+async function initializePage() {
     console.log('Initializing page...');
     try {
         // Check if all required elements exist
@@ -45,6 +45,15 @@ function initializePage() {
         if (missingElements.length > 0) {
             console.error('Missing DOM elements:', missingElements);
             return;
+        }
+        
+        // Initialize database first
+        try {
+            console.log('Initializing database...');
+            await initializeDatabase();
+            console.log('Database initialized successfully');
+        } catch (error) {
+            console.warn('Database initialization failed, continuing without database:', error);
         }
         
         // Check if Papa is available
@@ -114,8 +123,8 @@ function initializePage() {
         
         console.log('HTML Gantt chart ready');
         
-        // Load default data file
-        loadDefaultData();
+        // Load data from database or default CSV file
+        await loadDefaultDataFromDatabase();
     } catch (error) {
         console.error('Error initializing page:', error);
     }

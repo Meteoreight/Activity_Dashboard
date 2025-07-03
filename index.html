@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Activity Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-3 text-blue-600"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+                        <span id="header-title">Manufacturing Activity Dashboard</span>
+                    </h1>
+                    <p class="text-slate-500 mt-2" id="header-description">
+                        Upload CSV files to visualize manufacturing site activities in a Gantt chart format.
+                    </p>
+                </div>
+                <!-- Language Toggle Switch -->
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-slate-600">EN</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="language-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                    <span class="text-sm text-slate-600">JP</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Controls Area -->
+        <div class="bg-white p-6 rounded-xl shadow-md mb-8 flex flex-col sm:flex-row gap-4 items-center">
+            <button id="open-file-advanced" class="w-full sm:w-auto flex-shrink-0 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span id="open-file-advanced-btn">Open and Edit File</span>
+            </button>
+            <span id="file-name" class="text-slate-500 text-sm truncate w-full sm:w-auto flex-grow">No file selected</span>
+            <button id="use-mock-data" class="w-full sm:w-auto text-sm text-blue-600 hover:underline flex-shrink-0">
+                <span id="use-sample-data-btn">Use Sample Data</span>
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <div id="main-content" class="bg-white p-6 rounded-xl shadow-md hidden">
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8">
+                        <button id="gantt-tab" class="tab-button tab-active whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2">
+                                <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20V16"/>
+                            </svg>
+                            <span id="gantt-tab-text">Gantt Chart</span>
+                        </button>
+                        <button id="kanban-tab" class="tab-button whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2">
+                                <rect x="3" y="3" width="7" height="3"></rect><rect x="14" y="3" width="7" height="3"></rect><rect x="14" y="12" width="7" height="3"></rect><rect x="3" y="8" width="7" height="5"></rect>
+                            </svg>
+                            <span id="kanban-tab-text">Kanban Board</span>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Site and Assignee Selectors -->
+            <div class="mb-6 space-y-4">
+                <!-- Selectors Row -->
+                <div class="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+                        <label for="site-select" class="font-semibold text-slate-700 flex items-center whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 lg:mr-2 text-slate-500 hidden md:block"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M17 18h1"></path><path d="M12 18h1"></path><path d="M7 18h1"></path></svg>
+                            <span id="select-site-label" class="md:hidden">Site:</span>
+                            <span id="select-site-label-full" class="hidden md:inline">Select Manufacturing Site:</span>
+                        </label>
+                        <select id="site-select" class="p-2 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-auto min-w-[160px] sm:min-w-[200px] max-w-[280px]"></select>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+                        <label for="assignee-select" class="font-semibold text-slate-700 flex items-center whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 lg:mr-2 text-slate-500 hidden md:block"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            <span id="select-assignee-label" class="md:hidden">Assignee:</span>
+                            <span id="select-assignee-label-full" class="hidden md:inline">Select Assignee:</span>
+                        </label>
+                        <select id="assignee-select" class="p-2 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-auto min-w-[160px] sm:min-w-[200px] max-w-[280px]"></select>
+                    </div>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
+                        <label for="product-select" class="font-semibold text-slate-700 flex items-center whitespace-nowrap">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 lg:mr-2 text-slate-500 hidden md:block"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg>
+                            <span id="select-product-label" class="md:hidden">Product:</span>
+                            <span id="select-product-label-full" class="hidden md:inline">Select Product:</span>
+                        </label>
+                        <select id="product-select" class="p-2 border rounded-lg bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:outline-none w-full sm:w-auto min-w-[160px] sm:min-w-[200px] max-w-[280px]"></select>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons Row - Always on separate row -->
+                <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button id="add-activity" class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 sm:mr-2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span id="add-activity-btn" class="hidden sm:inline">Add Activity</span>
+                        <span id="add-activity-btn-short" class="sm:hidden">Add</span>
+                    </button>
+                    <button id="export-data" class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center text-sm hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 sm:mr-2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span id="export-data-btn" class="hidden sm:inline">Export Data</span>
+                        <span id="export-data-btn-short" class="sm:hidden">Export</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Gantt Chart View -->
+            <div id="gantt-view" class="view-container">
+                <div id="chart-container" class="w-full">
+                    <div id="date-header-top" class="text-center p-2 bg-slate-100 rounded-t-lg hidden">
+                        <div class="flex justify-between text-sm font-semibold text-slate-700">
+                            <span id="start-month"></span>
+                            <span id="end-month"></span>
+                        </div>
+                    </div>
+                    <div id="chart-loader" class="text-center p-8 hidden"><span id="loading-text">Loading chart...</span></div>
+                    <div id="chart-div">
+                    </div>
+                    <div id="date-header-bottom" class="text-center p-2 bg-slate-100 rounded-b-lg hidden">
+                        <div class="flex justify-between text-sm font-semibold text-slate-700">
+                            <span id="start-month-bottom"></span>
+                            <span id="end-month-bottom"></span>
+                        </div>
+                    </div>
+                </div>
+                <div id="no-data-message" class="text-center p-8 bg-slate-50 rounded-lg hidden">
+                    <p class="text-slate-500" id="no-data-text">No activities to display for the selected manufacturing site.</p>
+                </div>
+            </div>
+
+            <!-- Kanban Board View -->
+            <div id="kanban-view" class="view-container hidden">
+                <div id="kanban-loader" class="text-center p-8 hidden"><span id="kanban-loading-text">Loading kanban board...</span></div>
+                <div id="kanban-container" class="kanban-container">
+                    <!-- Kanban columns will be generated here -->
+                </div>
+                <div id="kanban-no-data-message" class="text-center p-8 bg-slate-50 rounded-lg hidden">
+                    <p class="text-slate-500" id="kanban-no-data-text">No activities to display for the selected filters.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="placeholder-content" class="text-center p-12 bg-white rounded-xl shadow-md">
+            <p class="text-slate-500" id="placeholder-text">To display data, please upload a CSV file or use sample data.</p>
+        </div>
+
+        <!-- Edit Modal -->
+        <div id="edit-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-900" id="edit-modal-title">Edit Activity</h2>
+                        <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="edit-form" class="space-y-4">
+                        <input type="hidden" id="edit-index" value="">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="edit-manufacturing-site" class="block text-sm font-medium text-gray-700 mb-1" id="edit-site-label">Manufacturing Site</label>
+                                <input type="text" id="edit-manufacturing-site" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="edit-product" class="block text-sm font-medium text-gray-700 mb-1" id="edit-product-label">Product</label>
+                                <input type="text" id="edit-product" list="edit-product-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <datalist id="edit-product-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="edit-api" class="block text-sm font-medium text-gray-700 mb-1" id="edit-api-label">API</label>
+                                <input type="text" id="edit-api" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="edit-assignment" class="block text-sm font-medium text-gray-700 mb-1" id="edit-assignment-label">Assignment</label>
+                                <input type="text" id="edit-assignment" list="edit-assignment-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <datalist id="edit-assignment-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="edit-process" class="block text-sm font-medium text-gray-700 mb-1" id="edit-process-label">Process</label>
+                                <input type="text" id="edit-process" list="edit-process-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <datalist id="edit-process-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="edit-activity" class="block text-sm font-medium text-gray-700 mb-1" id="edit-activity-label">Activity</label>
+                                <input type="text" id="edit-activity" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="edit-start-date" class="block text-sm font-medium text-gray-700 mb-1" id="edit-start-date-label">Start Date</label>
+                                <input type="date" id="edit-start-date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="edit-end-date" class="block text-sm font-medium text-gray-700 mb-1" id="edit-end-date-label">End Date</label>
+                                <input type="date" id="edit-end-date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="edit-note" class="block text-sm font-medium text-gray-700 mb-1" id="edit-note-label">Note</label>
+                            <textarea id="edit-note" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+                        
+                        <div class="flex justify-between pt-4 border-t">
+                            <div>
+                                <button type="button" id="delete-activity" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                                        <polyline points="3,6 5,6 21,6"></polyline>
+                                        <path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6"></path>
+                                        <path d="M10,11v6"></path>
+                                        <path d="M14,11v6"></path>
+                                        <path d="M12,1V3"></path>
+                                        <path d="M15,3H9"></path>
+                                    </svg>
+                                    <span id="delete-activity-btn">Delete Activity</span>
+                                </button>
+                            </div>
+                            <div class="space-x-2">
+                                <button type="button" id="cancel-edit" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors" id="cancel-edit-btn">Cancel</button>
+                                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors" id="save-edit-btn">Save Changes</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Activity Modal -->
+        <div id="add-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-900" id="add-modal-title">Add New Activity</h2>
+                        <button id="close-add-modal" class="text-gray-400 hover:text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="add-form" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="add-manufacturing-site" class="block text-sm font-medium text-gray-700 mb-1" id="add-site-label">Manufacturing Site</label>
+                                <input type="text" id="add-manufacturing-site" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label for="add-product" class="block text-sm font-medium text-gray-700 mb-1" id="add-product-label">Product</label>
+                                <input type="text" id="add-product" list="add-product-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                                <datalist id="add-product-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="add-api" class="block text-sm font-medium text-gray-700 mb-1" id="add-api-label">API</label>
+                                <input type="text" id="add-api" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            </div>
+                            
+                            <div>
+                                <label for="add-assignment" class="block text-sm font-medium text-gray-700 mb-1" id="add-assignment-label">Assignment</label>
+                                <input type="text" id="add-assignment" list="add-assignment-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <datalist id="add-assignment-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="add-process" class="block text-sm font-medium text-gray-700 mb-1" id="add-process-label">Process</label>
+                                <input type="text" id="add-process" list="add-process-suggestions" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <datalist id="add-process-suggestions"></datalist>
+                            </div>
+                            
+                            <div>
+                                <label for="add-activity" class="block text-sm font-medium text-gray-700 mb-1" id="add-activity-label">Activity</label>
+                                <input type="text" id="add-activity-input" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label for="add-start-date" class="block text-sm font-medium text-gray-700 mb-1" id="add-start-date-label">Start Date</label>
+                                <input type="date" id="add-start-date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                            
+                            <div>
+                                <label for="add-end-date" class="block text-sm font-medium text-gray-700 mb-1" id="add-end-date-label">End Date</label>
+                                <input type="date" id="add-end-date" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="add-note" class="block text-sm font-medium text-gray-700 mb-1" id="add-note-label">Note</label>
+                            <textarea id="add-note" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Optional notes about this activity..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end pt-4 border-t space-x-2">
+                            <button type="button" id="cancel-add" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors" id="cancel-add-btn">Cancel</button>
+                            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors" id="save-add-btn">Add Activity</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer / CSV Format Guide -->
+        <div class="mt-8 p-6 bg-slate-100 rounded-lg text-sm text-slate-600">
+            <h3 class="font-semibold text-slate-800 mb-2" id="csv-format-title">CSV Format Guide</h3>
+            <p id="csv-format-desc">Please upload a CSV file with the following headers:</p>
+            <code class="block bg-slate-200 p-2 mt-2 rounded text-xs">
+                Manufacturing_site, Product, API, Assignment, Note, Process, Activity, Start_with, End_with
+            </code>
+            <p class="mt-2" id="date-format-note">Date format should be `YYYY-MM-DD`.</p>
+        </div>
+
+        <footer class="text-center text-xs text-slate-500 py-4 mt-4">
+            Created by Yuki Takeda. 2025-07-02
+        </footer>
+    </div>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/gantt.js"></script>
+    <script src="js/kanban.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+/* Apply custom fonts */
+body {
+    font-family: 'Inter', 'Noto Sans JP', sans-serif;
+}
+/* Lucide icons replacement with SVG for simplicity */
+.icon-upload {
+    width: 20px;
+    height: 20px;
+    stroke-width: 2;
+    stroke: currentColor;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Custom scrollbar styles to prevent height issues */
+.gantt-scroll::-webkit-scrollbar {
+    height: 8px;
+}
+
+.gantt-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.gantt-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.gantt-scroll::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.tab-button {
+    color: #6b7280;
+    border-color: transparent;
+    transition: all 0.15s ease;
+}
+
+.tab-button:hover {
+    color: #4b5563;
+    border-color: #d1d5db;
+}
+
+.tab-active {
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+.kanban-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding: 1rem 0;
+    min-height: 400px;
+}
+
+.kanban-column {
+    flex: 0 0 300px;
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+}
+
+.kanban-header {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.kanban-card {
+    background: white;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kanban-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-card-title {
+    font-weight: 600;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    color: #1f2937;
+}
+
+.kanban-card-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.kanban-card-dates {
+    font-size: 0.75rem;
+    color: #059669;
+    background: #d1fae5;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    display: inline-block;
+}

@@ -29,9 +29,12 @@ const kanbanView = document.getElementById('kanban-view');
 // Initialize page when DOM is loaded
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('DOM loaded, initializing page...');
-    await initializePage();
     
-    updateLanguage('en');
+    // First set initial language without touching filename
+    currentLanguage = 'en';
+    updateLanguageUI('en');
+    
+    await initializePage();
 });
 
 async function initializePage() {
@@ -193,7 +196,12 @@ async function initializePage() {
         initializeMode();
         
         // Load data from database or default CSV file
-        await loadDefaultDataFromDatabase();
+        const dataLoaded = await loadDefaultDataFromDatabase();
+        
+        // If no data was loaded, set default filename
+        if (!dataLoaded) {
+            setDefaultFilename();
+        }
     } catch (error) {
         console.error('Error initializing page:', error);
     }
@@ -466,12 +474,15 @@ function switchMode(newMode) {
     if (newMode === 'local') {
         // Switch to Local DB mode
         currentFileHandle = null;
-        fileNameSpan.textContent = translations[currentLanguage]['file-name'] || 'No file selected';
-        // Load data from database
-        loadDefaultDataFromDatabase();
+        // Load data from database (this will update the filename appropriately)
+        loadDefaultDataFromDatabase().then(dataLoaded => {
+            if (!dataLoaded) {
+                setDefaultFilename();
+            }
+        });
     } else {
         // Switch to File Edit mode
-        fileNameSpan.textContent = 'No file selected';
+        setDefaultFilename();
         // Clear database reference for file mode
         // Data will be loaded when user selects a file
     }
@@ -516,6 +527,8 @@ function resetModeData() {
     productSelect.innerHTML = '';
     document.getElementById('export-data').classList.add('hidden');
     document.getElementById('add-activity').classList.add('hidden');
+    
+    // Don't reset filename here - let the mode-specific initialization handle it
 }
 
 // --- Import from File for Local DB Mode ---
@@ -553,21 +566,18 @@ async function handleImportFromFile() {
                 // Save to IndexedDB
                 await saveImportedDataToDatabase(data, file.name);
                 
-                // Update UI
-                fileNameSpan.textContent = `Imported from ${file.name}`;
-                
                 // Reload data from database
                 await loadDefaultDataFromDatabase();
                 
                 alert(`Successfully imported ${data.length} activities from ${file.name}`);
             } else {
                 alert('No valid data found in the file');
-                fileNameSpan.textContent = 'No file selected';
+                setDefaultFilename();
             }
         } catch (error) {
             console.error('Error importing file:', error);
             alert('Error importing file: ' + error.message);
-            fileNameSpan.textContent = 'Import failed';
+            setDefaultFilename();
         }
         
         // Clean up

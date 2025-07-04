@@ -3,6 +3,7 @@ const translations = {
         'header-title': 'Activity Dashboard',
         'header-description': 'Open CSV or Excel files to visualize and edit activities in a Gantt chart and Kanban board format.',
         'file-name': 'No file selected',
+        'indexeddb-filename': 'IndexedDB (Browser Database)',
         'use-sample-data-btn': 'Use Sample Data',
         'select-site-label': 'Site:',
         'select-site-label-full': 'Site:',
@@ -73,6 +74,7 @@ const translations = {
         'header-title': 'アクティビティダッシュボード',
         'header-description': 'CSVまたはExcelファイルを開いて、アクティビティをガントチャートとカンバンボードで可視化・編集します。',
         'file-name': 'ファイルが選択されていません',
+        'indexeddb-filename': 'IndexedDB (ブラウザデータベース)',
         'use-sample-data-btn': 'サンプルデータを使用',
         'select-site-label': '製造所:',
         'select-site-label-full': '製造所:',
@@ -143,24 +145,24 @@ const translations = {
 
 function updateLanguage(lang) {
     currentLanguage = lang;
-    const translation = translations[lang];
+    updateLanguageUI(lang);
     
-    // Update all translatable elements
-    Object.keys(translation).forEach(key => {
-        const element = document.getElementById(key);
-        if (element) {
-            element.textContent = translation[key];
-        }
-    });
-    
-    // Update HTML lang attribute and page title
-    document.documentElement.lang = lang === 'en' ? 'en' : 'ja';
-    document.title = translation['header-title'];
-    
-    // Update file name if it's the default text
+    // Update file name based on current state
     const fileNameElement = document.getElementById('file-name');
-    if (fileNameElement && (fileNameElement.textContent === 'No file selected' || fileNameElement.textContent === 'ファイルが選択されていません')) {
-        fileNameElement.textContent = translation['file-name'];
+    if (fileNameElement) {
+        const currentText = fileNameElement.textContent;
+        
+        // Update IndexedDB filename if currently showing IndexedDB
+        if (currentText.includes('IndexedDB')) {
+            fileNameElement.textContent = translations[lang]['indexeddb-filename'];
+        }
+        // Update default filename if showing default text
+        else if (currentText === 'No file selected' || 
+                 currentText === 'ファイルが選択されていません' ||
+                 currentText === translations['en']['file-name'] ||
+                 currentText === translations['ja']['file-name']) {
+            fileNameElement.textContent = translations[lang]['file-name'];
+        }
     }
     
     // Re-populate selectors if data is loaded
@@ -174,4 +176,22 @@ function updateLanguage(lang) {
             drawKanbanBoard();
         }
     }
+}
+
+function updateLanguageUI(lang) {
+    const translation = translations[lang];
+    
+    // Update all translatable elements except file-name
+    Object.keys(translation).forEach(key => {
+        if (key !== 'file-name') {
+            const element = document.getElementById(key);
+            if (element) {
+                element.textContent = translation[key];
+            }
+        }
+    });
+    
+    // Update HTML lang attribute and page title
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ja';
+    document.title = translation['header-title'];
 }

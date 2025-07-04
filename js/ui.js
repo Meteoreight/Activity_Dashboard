@@ -34,7 +34,7 @@ function resetUI() {
     currentFileHandle = null;
     mainContent.classList.add('hidden');
     placeholderContent.classList.remove('hidden');
-    fileNameSpan.textContent = translations[currentLanguage]['file-name'];
+    setDefaultFilename();
     siteSelect.innerHTML = '';
     assigneeSelect.innerHTML = '';
     chartDiv.innerHTML = '';

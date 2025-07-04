@@ -355,13 +355,6 @@ async function loadDefaultDataFromDatabase() {
         
         if (databaseActivities && databaseActivities.length > 0) {
             console.log('Loading data from database...');
-            const fileNameSpan = document.getElementById('file-name');
-            if (fileNameSpan) {
-                fileNameSpan.textContent = 'database.csv (Local Database)';
-            }
-            if (typeof originalFileName !== 'undefined') {
-                originalFileName = 'database';
-            }
             
             allActivities = databaseActivities;
             
@@ -384,6 +377,9 @@ async function loadDefaultDataFromDatabase() {
                 handleDrawChart();
             }
             
+            // Set filename after all UI updates are complete
+            setDatabaseFilename();
+            
             console.log('Data loaded from database successfully');
             return true;
         } else {
@@ -397,6 +393,31 @@ async function loadDefaultDataFromDatabase() {
         // Fallback to default CSV loading
         await loadDefaultDataFromCSV();
         return false;
+    }
+}
+
+function setDatabaseFilename() {
+    const fileNameSpan = document.getElementById('file-name');
+    if (fileNameSpan) {
+        if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+            fileNameSpan.textContent = translations[currentLanguage]['indexeddb-filename'];
+        } else {
+            fileNameSpan.textContent = 'IndexedDB (Browser Database)';
+        }
+    }
+    if (typeof originalFileName !== 'undefined') {
+        originalFileName = 'database';
+    }
+}
+
+function setDefaultFilename() {
+    const fileNameSpan = document.getElementById('file-name');
+    if (fileNameSpan) {
+        if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+            fileNameSpan.textContent = translations[currentLanguage]['file-name'];
+        } else {
+            fileNameSpan.textContent = 'No file selected';
+        }
     }
 }
 
@@ -420,6 +441,7 @@ async function loadDefaultDataFromCSV() {
             },
             error: (error) => {
                 console.error('Error parsing default CSV:', error);
+                setDefaultFilename();
             }
         });
     } else {

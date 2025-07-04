@@ -2,6 +2,71 @@
 body {
     font-family: 'Inter', 'Noto Sans JP', sans-serif;
 }
+
+/* Mode-specific color themes */
+/* Local DB Mode - Red theme (default) */
+body.mode-local {
+    --primary-color: #dc2626;
+    --primary-hover: #b91c1c;
+    --primary-light: #fecaca;
+    --primary-bg: #fee2e2;
+    --primary-ring: #fca5a5;
+    --tab-active-color: #dc2626;
+    --tab-active-border: #dc2626;
+}
+
+/* File Edit Mode - Blue theme */
+body.mode-file {
+    --primary-color: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #dbeafe;
+    --primary-bg: #eff6ff;
+    --primary-ring: #93c5fd;
+    --tab-active-color: #2563eb;
+    --tab-active-border: #2563eb;
+}
+
+/* Default to Local DB mode */
+body {
+    --primary-color: #dc2626;
+    --primary-hover: #b91c1c;
+    --primary-light: #fecaca;
+    --primary-bg: #fee2e2;
+    --primary-ring: #fca5a5;
+    --tab-active-color: #dc2626;
+    --tab-active-border: #dc2626;
+}
+
+/* Apply CSS custom properties to relevant elements */
+.mode-controls button:not(.text-blue-600) {
+    background-color: var(--primary-color) !important;
+}
+
+.mode-controls button:not(.text-blue-600):hover {
+    background-color: var(--primary-hover) !important;
+}
+
+.tab-active {
+    color: var(--tab-active-color) !important;
+    border-color: var(--tab-active-border) !important;
+}
+
+/* Add Activity and Export buttons */
+#add-activity {
+    background-color: var(--primary-color) !important;
+}
+
+#add-activity:hover {
+    background-color: var(--primary-hover) !important;
+}
+
+#export-data {
+    background-color: #059669 !important;
+}
+
+#export-data:hover {
+    background-color: #047857 !important;
+}
 /* Lucide icons replacement with SVG for simplicity */
 .icon-upload {
     width: 20px;

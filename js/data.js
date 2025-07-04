@@ -27,21 +27,36 @@ async function processData(data) {
         // Save to database
         await saveActivitiesToDatabase(allActivities);
         
-        populateSiteSelector();
-        populateAssigneeSelector();
-        populateProductSelector();
-        populateAllSuggestions();
-        mainContent.classList.remove('hidden');
-        placeholderContent.classList.add('hidden');
-        document.getElementById('export-data').classList.remove('hidden');
-        document.getElementById('add-activity').classList.remove('hidden');
+        // UI updates should be handled by the caller
+        if (typeof populateSiteSelector === 'function') {
+            populateSiteSelector();
+            populateAssigneeSelector();
+            populateProductSelector();
+            populateAllSuggestions();
+        }
+        
+        if (typeof mainContent !== 'undefined' && mainContent) {
+            mainContent.classList.remove('hidden');
+            placeholderContent.classList.add('hidden');
+            document.getElementById('export-data').classList.remove('hidden');
+            document.getElementById('add-activity').classList.remove('hidden');
+        }
+        
         console.log('UI updated, auto-drawing chart');
         // Auto-draw the chart
-        handleDrawChart();
+        if (typeof handleDrawChart === 'function') {
+            handleDrawChart();
+        }
     } else {
         console.error('Invalid CSV format. Headers:', data.length > 0 ? Object.keys(data[0]) : 'No data');
-        alert(translations[currentLanguage]['invalid-csv-format']);
-        resetUI();
+        if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+            alert(translations[currentLanguage]['invalid-csv-format']);
+        } else {
+            alert('Invalid CSV format. Please check the headers.');
+        }
+        if (typeof resetUI === 'function') {
+            resetUI();
+        }
     }
 }
 
@@ -68,8 +83,14 @@ function handleFileUpload(event) {
                         processData(results.data);
                     },
                     error: (error) => {
-                        alert(translations[currentLanguage]['csv-parse-error'] + error.message);
-                        resetUI();
+                        if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+                            alert(translations[currentLanguage]['csv-parse-error'] + error.message);
+                        } else {
+                            alert('CSV parsing error: ' + error.message);
+                        }
+                        if (typeof resetUI === 'function') {
+                            resetUI();
+                        }
                     }
                 });
             } else {
@@ -81,8 +102,14 @@ function handleFileUpload(event) {
                     processData(data);
                 };
                 reader.onerror = function() {
-                    alert(translations[currentLanguage]['file-read-error']);
-                    resetUI();
+                    if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+                        alert(translations[currentLanguage]['file-read-error']);
+                    } else {
+                        alert('File reading error');
+                    }
+                    if (typeof resetUI === 'function') {
+                        resetUI();
+                    }
                 };
                 reader.readAsText(file);
             }
@@ -127,7 +154,9 @@ console.log('data.js loaded, handleUseMockData defined:', typeof handleUseMockDa
 function parseExcelFile(file) {
     if (typeof XLSX === 'undefined') {
         alert('Excel support not available. Please use CSV format.');
-        resetUI();
+        if (typeof resetUI === 'function') {
+            resetUI();
+        }
         return;
     }
     
@@ -146,7 +175,9 @@ function parseExcelFile(file) {
             
             if (jsonData.length < 2) {
                 alert('Excel file must contain at least 2 rows (header + data)');
-                resetUI();
+                if (typeof resetUI === 'function') {
+                    resetUI();
+                }
                 return;
             }
             
@@ -169,13 +200,21 @@ function parseExcelFile(file) {
         } catch (error) {
             console.error('Excel parsing error:', error);
             alert('Error parsing Excel file: ' + error.message);
-            resetUI();
+            if (typeof resetUI === 'function') {
+                resetUI();
+            }
         }
     };
     
     reader.onerror = function() {
-        alert(translations[currentLanguage]['file-read-error']);
-        resetUI();
+        if (typeof translations !== 'undefined' && translations[currentLanguage]) {
+            alert(translations[currentLanguage]['file-read-error']);
+        } else {
+            alert('File reading error');
+        }
+        if (typeof resetUI === 'function') {
+            resetUI();
+        }
     };
     
     reader.readAsBinaryString(file);
@@ -325,15 +364,25 @@ async function loadDefaultDataFromDatabase() {
             }
             
             allActivities = databaseActivities;
-            populateSiteSelector();
-            populateAssigneeSelector();
-            populateProductSelector();
-            populateAllSuggestions();
-            mainContent.classList.remove('hidden');
-            placeholderContent.classList.add('hidden');
-            document.getElementById('export-data').classList.remove('hidden');
-            document.getElementById('add-activity').classList.remove('hidden');
-            handleDrawChart();
+            
+            // UI updates should be handled by the caller
+            if (typeof populateSiteSelector === 'function') {
+                populateSiteSelector();
+                populateAssigneeSelector();
+                populateProductSelector();
+                populateAllSuggestions();
+            }
+            
+            if (typeof mainContent !== 'undefined' && mainContent) {
+                mainContent.classList.remove('hidden');
+                placeholderContent.classList.add('hidden');
+                document.getElementById('export-data').classList.remove('hidden');
+                document.getElementById('add-activity').classList.remove('hidden');
+            }
+            
+            if (typeof handleDrawChart === 'function') {
+                handleDrawChart();
+            }
             
             console.log('Data loaded from database successfully');
             return true;

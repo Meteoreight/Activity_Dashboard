@@ -335,7 +335,7 @@ function closeAddModal() {
 }
 
 // Delete activity
-function deleteActivity() {
+async function deleteActivity() {
     const uniqueId = parseInt(document.getElementById('edit-index').value);
     const activityIndex = allActivities.findIndex(act => act._uniqueId === uniqueId);
     
@@ -351,10 +351,9 @@ function deleteActivity() {
             populateAllSuggestions();
             handleDrawChart();
             
-            // Save to file if in edit mode
-            if (currentFileHandle) {
-                handleSaveToFile();
-            }
+            // Save based on current mode
+            await saveModeSpecificData();
+            
         }
     }
 }
@@ -385,10 +384,8 @@ async function saveChanges() {
         populateAllSuggestions();
         handleDrawChart();
         
-        // Save to file if in edit mode
-        if (currentFileHandle) {
-            await handleSaveToFile();
-        }
+        // Save based on current mode
+        await saveModeSpecificData();
     }
 }
 
@@ -417,10 +414,8 @@ async function addNewActivity() {
     populateAllSuggestions();
     handleDrawChart();
     
-    // Save to file if in edit mode
-    if (currentFileHandle) {
-        await handleSaveToFile();
-    }
+    // Save based on current mode
+    await saveModeSpecificData();
 }
 
 // Export data to CSV
@@ -473,4 +468,50 @@ async function getLastDirectoryHandle() {
 
 async function saveDirectoryInfo(fileHandle) {
     // Placeholder for directory handle saving
+}
+
+// --- Mode-specific data saving ---
+async function saveModeSpecificData() {
+    try {
+        if (currentMode === 'local') {
+            // Local DB mode - save to IndexedDB
+            await saveToDatabase();
+        } else if (currentMode === 'file') {
+            // File Edit mode - save to file if handle exists
+            if (currentFileHandle) {
+                await handleSaveToFile();
+            }
+        }
+    } catch (error) {
+        console.error('Error saving data:', error);
+        // Don't show alert for database saves as they might happen frequently
+        if (currentMode === 'file') {
+            alert('Error saving to file: ' + error.message);
+        }
+    }
+}
+
+async function saveToDatabase() {
+    try {
+        const db = window.getDatabase();
+        if (!db) {
+            console.warn('Database not available for saving');
+            return;
+        }
+        
+        // Clear existing data and save current activities
+        await db.clearAllActivities();
+        
+        // Process activities for database storage
+        const activitiesForDB = allActivities.map(activity => ({
+            ...activity
+            // Remove _uniqueId as it's handled by database auto-increment
+        }));
+        
+        await db.saveAllActivities(activitiesForDB);
+        console.log(`Saved ${activitiesForDB.length} activities to database`);
+    } catch (error) {
+        console.error('Error saving to database:', error);
+        throw error;
+    }
 }

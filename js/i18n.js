@@ -64,7 +64,10 @@ const translations = {
         'add-note-label': 'Note',
         'cancel-add-btn': 'Cancel',
         'save-add-btn': 'Add Activity',
-        'delete-confirm': 'Are you sure you want to delete this activity?'
+        'delete-confirm': 'Are you sure you want to delete this activity?',
+        'mode-label-local': 'Local DB',
+        'mode-label-file': 'File Edit',
+        'import-from-file-btn': 'Import from File'
     },
     ja: {
         'header-title': 'アクティビティダッシュボード',
@@ -131,7 +134,10 @@ const translations = {
         'add-note-label': 'ノート',
         'cancel-add-btn': 'キャンセル',
         'save-add-btn': 'アクティビティを追加',
-        'delete-confirm': 'このアクティビティを削除してもよろしいですか？'
+        'delete-confirm': 'このアクティビティを削除してもよろしいですか？',
+        'mode-label-local': 'ローカルDB',
+        'mode-label-file': 'ファイル編集',
+        'import-from-file-btn': 'ファイルからインポート'
     }
 };
 

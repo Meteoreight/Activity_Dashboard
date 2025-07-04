@@ -25,3 +25,4 @@ node_modules/
 
 # Reference files
 base.html
+.claude/settings.local.json

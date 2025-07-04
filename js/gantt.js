@@ -298,7 +298,6 @@ function drawChart() {
 
         chartLoader.classList.add('hidden');
         chartDiv.classList.remove('hidden');
-        updateDateHeaders(validActivities);
 
         // Add double-click listeners to the bars
         addDoubleClickListeners();

@@ -3,7 +3,7 @@ let currentLanguage = 'en'; // Default to English
 let originalFileName = 'activities'; // Default filename
 let currentFileHandle = null; // Store file handle for File System Access API
 let currentView = 'gantt'; // Default view
-let currentMode = 'local'; // Default mode: 'local' or 'file'
+let currentMode = 'file'; // Default mode: 'local' or 'file'
 
 // --- DOM Element References ---
 const fileNameSpan = document.getElementById('file-name');
@@ -192,7 +192,7 @@ async function initializePage() {
 
         console.log('HTML Gantt chart ready');
 
-        // Initialize mode (default to Local DB mode)
+        // Initialize mode (default to File Edit mode)
         initializeMode();
 
         // Load data from database or default CSV file

@@ -26,3 +26,4 @@ node_modules/
 # Reference files
 base.html
 .claude/settings.local.json
+.kiro/settings/mcp.json
